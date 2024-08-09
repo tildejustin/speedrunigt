@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +32,13 @@ public abstract class TranslationStorageMixin {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @Inject(method = "load(Ljava/util/List;Ljava/util/Map;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/resource/Resource;getInputStream()Ljava/io/InputStream;"), locals = LocalCapture.CAPTURE_FAILSOFT, cancellable = true)
+    private static void cancelExternalLoadingOfTranslations(List<Resource> resources, Map<String, String> translationMap, CallbackInfo ci, Iterator<Resource> resourceIterator, Resource resource) {
+        if (SpeedRunOption.getOption(SpeedRunOptions.ALWAYS_ENGLISH_TRANSLATIONS) && resource.getId().getNamespace().equals("speedrunigt") && !resource.getId().getPath().equalsIgnoreCase("lang/en_us.json")) {
+            ci.cancel();
         }
     }
 }

@@ -73,7 +73,11 @@ public abstract class MinecraftClientMixin {
     public void onCreate(String name, String displayName, LevelInfo levelInfo, CallbackInfo ci) {
         try {
             if (levelInfo != null) {
-                RunCategory category = SpeedRunOption.getOption(SpeedRunOptions.TIMER_CATEGORY);
+                // don't start timer when the world is being created on another thread
+        // this is for compatibility with SeedQueue, where this is method is called to create background seeds
+        if (!MinecraftClient.getInstance().isOnThread()) {
+            return;
+        }RunCategory category = SpeedRunOption.getOption(SpeedRunOptions.TIMER_CATEGORY);
                 if (category.isAutoStart()) {
                     InGameTimer.start(name, RunType.fromBoolean(InGameTimerUtils.IS_SET_SEED));
                     InGameTimer.getInstance().setDefaultGameMode(levelInfo.getGameMode().getId());
