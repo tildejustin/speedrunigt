@@ -67,23 +67,22 @@ public abstract class MinecraftClientMixin {
 
     @Shadow @Final public TextRenderer textRenderer;
     @Shadow @Final private Window window;
-    private boolean disconnectCheck = false;
 
     @Inject(at = @At("HEAD"), method = "startIntegratedServer")
     public void onCreate(String name, String displayName, LevelInfo levelInfo, CallbackInfo ci) {
         try {
             if (levelInfo != null) {
                 // don't start timer when the world is being created on another thread
-        // this is for compatibility with SeedQueue, where this is method is called to create background seeds
-        if (!MinecraftClient.getInstance().isOnThread()) {
-            return;
-        }RunCategory category = SpeedRunOption.getOption(SpeedRunOptions.TIMER_CATEGORY);
-                if (category.isAutoStart()) {
-                    InGameTimer.start(name, RunType.fromBoolean(InGameTimerUtils.IS_SET_SEED));
-                    InGameTimer.getInstance().setDefaultGameMode(levelInfo.getGameMode().getId());
-                    // wrong mapping OMEGALUL
-                    InGameTimer.getInstance().setCheatAvailable(levelInfo.allowCommands());
+                // this is for compatibility with SeedQueue, where this is method is called to create background seeds
+                if (!MinecraftClient.getInstance().isOnThread()) {
+                    return;
                 }
+
+                RunCategory category = SpeedRunOption.getOption(SpeedRunOptions.TIMER_CATEGORY);
+                if (category.isAutoStart()) InGameTimer.start(name, RunType.fromBoolean(InGameTimerUtils.IS_SET_SEED));
+                InGameTimer.getInstance().setDefaultGameMode(levelInfo.getGameMode().getId());
+                // wrong mapping OMEGALUL
+                InGameTimer.getInstance().setCheatAvailable(levelInfo.allowCommands());
             } else {
                 boolean loaded = InGameTimer.load(name);
                 if (!loaded) InGameTimer.end();
@@ -94,14 +93,10 @@ public abstract class MinecraftClientMixin {
             e.printStackTrace();
         }
         InGameTimerUtils.IS_CHANGING_DIMENSION = true;
-        this.disconnectCheck = false;
     }
 
     @Inject(method = "openScreen", at = @At("RETURN"))
     public void onSetScreen(Screen screen, CallbackInfo ci) {
-        if (screen instanceof LevelLoadingScreen) {
-            this.disconnectCheck = true;
-        }
         if (InGameTimerClientUtils.FAILED_CATEGORY_INIT_SCREEN != null) {
             Screen screen1 = InGameTimerClientUtils.FAILED_CATEGORY_INIT_SCREEN;
             InGameTimerClientUtils.FAILED_CATEGORY_INIT_SCREEN = null;
@@ -288,7 +283,7 @@ public abstract class MinecraftClientMixin {
     }
 
     // Record save
-    @Inject(method = "stop", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;close()V", shift = At.Shift.BEFORE))
+    @Inject(method = "stop", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;close()V"))
     public void onStop(CallbackInfo ci) {
         InGameTimer.getInstance().writeRecordFile(false);
     }
@@ -296,7 +291,10 @@ public abstract class MinecraftClientMixin {
     // Disconnecting fix
     @Inject(at = @At("HEAD"), method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V")
     public void disconnect(CallbackInfo ci) {
-        if (InGameTimer.getInstance().getStatus() != TimerStatus.NONE && this.disconnectCheck) {
+        // seedqueue suppresses disconnect calls for worlds in queue,
+        // and the client world is set after starting the server,
+        // which where the stray disconnect calls come from.
+        if (InGameTimer.getInstance().getStatus() != TimerStatus.NONE && this.world != null) {
             GameInstance.getInstance().callEvents("leave_world");
             InGameTimer.leave();
         }
