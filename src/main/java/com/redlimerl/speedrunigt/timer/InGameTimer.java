@@ -18,7 +18,7 @@ import com.redlimerl.speedrunigt.timer.packet.packets.*;
 import com.redlimerl.speedrunigt.timer.running.RunPortalPos;
 import com.redlimerl.speedrunigt.timer.running.RunType;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.screen.StatsScreen;
 import net.minecraft.world.Difficulty;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -89,17 +89,34 @@ public class InGameTimer implements Serializable {
     //Timer time
     long startTime = 0;
     long endTime = 0;
+    // end rebase, 0 except for obtain item?
     private long endIGTTime = 0;
+    // server player ticks
     private long completeStatIGT = 0;
+    // autoretime inclusion
     private long retimedIGTTime = 0;
-    private long rebaseIGTime = 0;
+    // segmenting
     private long excludedRTA = 0;
+    // nether portal lag
     private long excludedIGT = 0;
-    private long leastTickTime = 0;
+    // last client tick
+    long leastTickTime = 0;
+    // last pause start
     private long leastStartTime = 0;
+    // length of most recent pause
     private long leastPauseTime = 0;
     private long totalPauseTime = 0;
-    private int activateTicks = 0;
+    private long lastPortalTime = -1;
+    // long r/w is not guaranteed to be atomic unless it's volatile
+    private volatile long lastPortalTimeServer = -1;
+    // total ticks counted for igt
+    int activateTicks = 0;
+    int type1 = 0;
+    int addedMisc = 0;
+    int type3 = 0;
+    int type4 = 0;
+    int clientStats = 0;
+    int serverStats = 0;
     Long lanOpenedTime = null;
 
     private long leaveTime = 0;
@@ -188,13 +205,21 @@ public class InGameTimer implements Serializable {
      * End the Timer, Trigger when Complete Ender Dragon
      */
     public static void complete() {
-        complete(System.currentTimeMillis(), true);
+        complete(false);
+    }
+
+    public static void complete(boolean rebase) {
+        complete(System.currentTimeMillis(), true, rebase);
+    }
+
+    public static void complete(long endTime, boolean canSendPacket) {
+        complete(endTime, canSendPacket, false);
     }
 
     /**
      * End the Timer, Trigger when Complete Ender Dragon
      */
-    public synchronized static void complete(long endTime, boolean canSendPacket) {
+    public synchronized static void complete(long endTime, boolean canSendPacket, boolean rebase) {
         if (INSTANCE.isCompleted || !INSTANCE.isStarted()) return;
 
         // Init additional data
@@ -205,7 +230,8 @@ public class InGameTimer implements Serializable {
         InGameTimer timer = COMPLETED_INSTANCE;
 
         timer.endTime = endTime;
-        timer.endIGTTime = timer.endTime - timer.leastTickTime;
+        if (rebase) timer.activateTicks--;
+        timer.endIGTTime = rebase ? Math.min(50, timer.endTime - timer.leastTickTime) : 0;
         if (timer.isServerIntegrated && SpeedRunIGT.IS_CLIENT_SIDE) {
             Long inGameTime = InGameTimerClientUtils.getPlayerTime();
             if (inGameTime != null) {
@@ -494,7 +520,7 @@ public class InGameTimer implements Serializable {
     }
 
     public long getTicks() {
-        return this.activateTicks;
+        return this.activateTicks + this.serverStats + this.addedMisc - excludedIGT;
     }
 
     public long getTotalTicks() {
@@ -507,6 +533,22 @@ public class InGameTimer implements Serializable {
 
     public long getTotalPauseTime() {
         return this.totalPauseTime;
+    }
+
+    public long getLastPortalTime() {
+        return this.lastPortalTime;
+    }
+
+    public void setLastPortalTime(long time) {
+        this.lastPortalTime = time;
+    }
+
+    public long getLastPortalTimeServer() {
+        return this.lastPortalTimeServer;
+    }
+
+    public void setLastPortalTimeServer(long time) {
+        this.lastPortalTimeServer = time;
     }
 
     public int getMoreData(int key) {
@@ -577,18 +619,17 @@ public class InGameTimer implements Serializable {
         return this.isCompleted && this != COMPLETED_INSTANCE ? COMPLETED_INSTANCE.getRealTimeAttack() : this.getStatus() == TimerStatus.NONE ? 0 : this.getEndTime() - this.getStartTime() - this.excludedRTA;
     }
 
-    public long getInGameTime() { return this.getInGameTime(true); }
+    public long getInGameTime() { return this.getInGameTime(SpeedRunOption.getOption(SpeedRunOptions.SMOOTH)); }
 
     public long getInGameTime(boolean smooth) {
         if (this.isCompleted && this != COMPLETED_INSTANCE) return COMPLETED_INSTANCE.getInGameTime(smooth);
         if (this.isRTAMode) return this.getRealTimeAttack();
 
         long ms = System.currentTimeMillis();
+        boolean intepolate = smooth && this.isPlaying() && this.leastTickTime != 0;
         return !this.isStarted() ? 0 :
-                (this.getTicks() * 50L) // Tick Based
-                        + Math.min(50, smooth && this.isPlaying() && this.leastTickTime != 0 ? ms - this.leastTickTime : 0) // More smooth timer in playing
-                        - this.rebaseIGTime // Subtract Rebased time
-                        - this.excludedIGT
+                ((this.getTicks() + (intepolate ? -1 : 0)) * 50L) // Tick Based
+                        + Math.min(50, intepolate ? ms - this.leastTickTime : 0) // More smooth timer in playing
                         + this.endIGTTime;
     }
 
@@ -624,18 +665,28 @@ public class InGameTimer implements Serializable {
     public void tick() {
         if (this.getStatus() == TimerStatus.COMPLETED_LEGACY) return;
 
+        if (!this.isStarted()) {
+            this.type4++;
+        }
+
         if (this.isPlaying()) {
             this.activateTicks++;
+        } else if (this.isStarted()) {
+            this.type4++;
         }
         this.loggerTicks++;
+
+        if (MinecraftClient.getInstance().currentScreen instanceof StatsScreen) {
+            clientStats++;;
+        }
 
         long currentTime = System.currentTimeMillis();
         long tickDelays = currentTime - this.leastTickTime;
 
         //Rebase time (When a joined world or changed dimension)
         if (this.leastStartTime != 0 && this.leastTickTime != 0 && this.leastStartTime != currentTime) {
-            double value = MathHelper.clamp((this.leastStartTime - this.leastTickTime) * 1.0 / tickDelays, 0, 1) * 50.0;
-            this.rebaseIGTime += (long) value;
+//            double value = MathHelper.clamp((this.leastStartTime - this.leastTickTime) * 1.0 / tickDelays, 0, 1) * 50.0;
+//            this.rebaseIGTime += (long) value;
             this.leastStartTime = 0;
         }
 
@@ -667,6 +718,22 @@ public class InGameTimer implements Serializable {
         if (SpeedRunOption.getOption(SpeedRunOptions.TIMER_DATA_AUTO_SAVE) == SpeedRunOptions.TimerSaveInterval.TICKS) save();
     }
 
+    public void tickType1() {
+        type1++;
+    }
+
+    public void tickAdded() {
+        addedMisc++;
+    }
+
+    public void tickType3() {
+        type3++;
+    }
+
+    public void tickServerStats() {
+        serverStats++;
+    }
+
     public void setPause(boolean isPause, String reason) { this.setPause(isPause, TimerStatus.PAUSED, reason); }
     public void setPause(boolean toPause, TimerStatus toStatus, String reason) {
         if (this.getStatus() == TimerStatus.COMPLETED_LEGACY || this.isCoop()) {
@@ -687,7 +754,7 @@ public class InGameTimer implements Serializable {
                 }
                 InGameTimerUtils.CHANGED_OPTIONS.clear();
                 InGameTimerUtils.RETIME_IS_WAITING_LOAD = false;
-                if (this.pauseTriggerTick == this.loggerTicks) this.tick();
+                if (this.pauseTriggerTick == this.loggerTicks && this.isStarted()) this.tick();
                 this.pauseTriggerTick = this.loggerTicks;
                 this.setStatus(toStatus);
 
@@ -697,7 +764,7 @@ public class InGameTimer implements Serializable {
                     if (SpeedRunOption.getOption(SpeedRunOptions.TIMER_DATA_AUTO_SAVE) == SpeedRunOptions.TimerSaveInterval.PAUSE && this.status != TimerStatus.LEAVE) save();
                     // writes the global file on leaving the world.
                     // otherwise with seedqueue, the global record is only updated upon joining the next world.
-                    this.writeRecordFile(toStatus != TimerStatus.LEAVE);
+                    this.writeRecordFile(toStatus != com.redlimerl.speedrunigt.timer.TimerStatus.LEAVE);
                 }
             }
         } else {
@@ -831,9 +898,9 @@ public class InGameTimer implements Serializable {
         return this.lanOpenedTime != null;
     }
 
-    public void checkConditions() {
+    public void checkConditions(boolean rebase) {
         if (this.getCustomCondition().map(CategoryCondition::isDone).orElse(false)) {
-            complete();
+            complete(rebase);
         }
     }
 
@@ -886,7 +953,7 @@ public class InGameTimer implements Serializable {
 
     public void tryExcludeIGT(long igt, String reason) {
         this.excludedIGT += igt;
-        System.out.printf("[SpeedRunIGT] this play seems to be caught in specific lag(%s). excluded IGT for this time: .%s", reason, igt);
+        SpeedRunIGT.debug(String.format("[SpeedRunIGT] this play seems to be caught in specific lag(%s). excluded IGT for this time: %s ticks", reason, igt));
     }
 
     public boolean isRTAMode() {

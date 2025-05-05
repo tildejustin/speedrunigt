@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.redlimerl.speedrunigt.SpeedRunIGT;
 import com.redlimerl.speedrunigt.instance.GameInstance;
 import com.redlimerl.speedrunigt.timer.InGameTimer;
+import com.redlimerl.speedrunigt.timer.InGameTimerClientUtils;
 import com.redlimerl.speedrunigt.timer.InGameTimerUtils;
 import com.redlimerl.speedrunigt.timer.TimerStatus;
 import com.redlimerl.speedrunigt.timer.category.RunCategories;
@@ -23,6 +24,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Objects;
@@ -90,5 +92,19 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
                 .map(ItemStack::getItem) // Turn each item stack into its item
                 .collect(Collectors.toSet()); // Collect to a set of items that the player has
         return currentItemTypes.contains(Items.ENDER_EYE) || (currentItemTypes.contains(Items.ENDER_PEARL) && (currentItemTypes.contains(Items.BLAZE_ROD) || currentItemTypes.contains(Items.BLAZE_POWDER)));
+    }
+
+    @Override
+    protected void tickNetherPortal() {
+        InGameTimer timer = InGameTimer.getInstance();
+        // Portal time update
+        if (this.inNetherPortal) {
+            if (timer.getLastPortalTimeServer() == -1) {
+                timer.setLastPortalTimeServer(InGameTimerClientUtils.getPlayerTicks());
+            }
+        } else if (this.netherPortalTime == 0) {
+            timer.setLastPortalTimeServer(-1);
+        }
+        super.tickNetherPortal();
     }
 }

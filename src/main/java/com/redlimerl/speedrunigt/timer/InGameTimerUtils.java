@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class InGameTimerUtils {
-    public static boolean IS_CHANGING_DIMENSION = false;
     public static boolean IS_KILLED_ENDER_DRAGON = false;
     public static boolean IS_CAN_WAIT_WORLD_LOAD = false;
     public static final HashSet<Object> CHANGED_OPTIONS = Sets.newHashSet();

@@ -66,6 +66,6 @@ public class TimerCustomConditionPacket extends TimerPacket {
                 break;
             }
         }
-        InGameTimer.getInstance().checkConditions();
+        InGameTimer.getInstance().checkConditions(false);
     }
 }

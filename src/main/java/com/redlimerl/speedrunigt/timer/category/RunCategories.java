@@ -36,11 +36,20 @@ public class RunCategories {
     public static RunCategory ALL_WORKSTATIONS = new RunCategory("ALL_WORKSTATIONS","mcce#All_Workstations");
     public static RunCategory FULL_INV = new RunCategory("FULL_INV","mcce#Full_Inventory");
     public static RunCategory STACK_OF_LIME_WOOL = new RunCategory("STACK_OF_LIME_WOOL","mcce#Stack_of_Lime_Wool");
+    public static RunCategory OBTAIN_OBSIDIAN = new RunCategory("OBTAIN_OBSIDIAN", "");
     public static RunCategory ALL_PORTALS = RunCategoryBuilder.create("ALL_PORTALS","mcce#All_Portals", "speedrunigt.option.timer_category.all_portals")
             .setCanSegment(true).build();
     public static AllBlocksRunCategory ALL_BLOCKS = new AllBlocksRunCategory();
     public static RunCategory MINE_A_CHUNK = new RunCategory("MINE_A_CHUNK","mcce#Mine_a_Chunk");
     public static RunCategory MINE_A_CHUNK_SF = new RunCategory("MINE_A_CHUNK_SF","mc_juice#Mine_a_Chunk_Superflat");
+    public static RunCategory OBTAIN_DIAMOND = new RunCategory("OBTAIN_DIAMOND", "mcce#Obtain_Item");
+    public static RunCategory OBTAIN_EMERALD = new RunCategory("OBTAIN_EMERALD", "mcce#Obtain_Item");
+    public static RunCategory OBTAIN_CAKE = new RunCategory("OBTAIN_CAKE", "mcce#Obtain_Item");
+    public static RunCategory OBTAIN_GOLDEN_APPLE = new RunCategory("OBTAIN_GOLDEN_APPLE", "mcce#Obtain_Item");
+    public static RunCategory OBTAIN_NETHERITE = new RunCategory("OBTAIN_NETHERITE", "mcce#Obtain_Item");
+    public static RunCategory ALL_LOGS = new RunCategory("ALL_LOGS", "mcce#All_Wood_Logs");
+    public static RunCategory ALL_WOOL = new RunCategory("ALL_WOOL", "mcce#All_Wool");
+    public static RunCategory SONIC_TAILS_KNUCKLES = new RunCategory("SONIC_TAILS_KNUCKLES", "mcce#Sonic,_Tails,_&_Knuckles");
 
     public static void checkAllBossesCompleted() {
         InGameTimer timer = InGameTimer.getInstance();

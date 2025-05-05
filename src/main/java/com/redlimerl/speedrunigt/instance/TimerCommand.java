@@ -85,7 +85,7 @@ public class TimerCommand {
             source.sendFeedback(new LiteralText("Timer is not running"), true);
             return 0;
         }
-        int value = timerAccessType.getValue(isIGT ? InGameTimer.getInstance().getInGameTime() : InGameTimer.getInstance().getRealTimeAttack());
+        int value = timerAccessType.getValue(isIGT ? InGameTimer.getInstance().getInGameTime(false) : InGameTimer.getInstance().getRealTimeAttack());
         source.sendFeedback(new LiteralText(String.format("IGT by %s: %s", timerAccessType.name().toLowerCase(), value)), true);
         return value;
     }

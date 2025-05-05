@@ -21,6 +21,7 @@ import net.minecraft.client.font.FontStorage;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.hud.BackgroundHelper;
 import net.minecraft.client.gui.screen.*;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
@@ -41,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -71,6 +73,8 @@ public abstract class MinecraftClientMixin {
     @Shadow @Final public TextRenderer textRenderer;
     @Shadow @Final private Window window;
 
+    @Shadow @Nullable public ClientPlayerEntity player;
+
     @Inject(at = @At("HEAD"), method = "createWorld")
     public void onCreate(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
         // don't start timer when the world is being created on another thread
@@ -84,7 +88,6 @@ public abstract class MinecraftClientMixin {
         InGameTimer.getInstance().setDefaultGameMode(levelInfo.getGameMode().getId());
         InGameTimer.getInstance().setCheatAvailable(levelInfo.areCommandsAllowed());
         InGameTimer.getInstance().checkDifficulty(levelInfo.getDifficulty());
-        InGameTimerUtils.IS_CHANGING_DIMENSION = true;
     }
 
     @Inject(at = @At("HEAD"), method = "startIntegratedServer(Ljava/lang/String;)V")
@@ -97,7 +100,6 @@ public abstract class MinecraftClientMixin {
             SpeedRunIGT.error("Exception in timer load, can't load the timer.");
             e.printStackTrace();
         }
-        InGameTimerUtils.IS_CHANGING_DIMENSION = true;
     }
 
     @Inject(method = "openScreen", at = @At("RETURN"))
@@ -114,8 +116,19 @@ public abstract class MinecraftClientMixin {
         InGameTimer timer = InGameTimer.getInstance();
         if (timer.getStatus() == TimerStatus.NONE) return;
 
-        InGameTimerUtils.IS_CHANGING_DIMENSION = false;
-        timer.setPause(true, TimerStatus.IDLE, "changed dimension");
+        // TODO: this may break seedqueue
+        if (this.player != null) {
+            timer.setPause(true, TimerStatus.IDLE, "changed dimension");
+        }
+
+        if (this.player != null && timer.getLastPortalTime() != -1) {
+            long elapsed = timer.getTicks() - timer.getLastPortalTime();
+            long elapsedServer = InGameTimerClientUtils.getPlayerTicks() - timer.getLastPortalTimeServer();
+            SpeedRunIGT.debug("elapsed: " + elapsed + ", elapsed server: " + elapsedServer);
+            timer.tryExcludeIGT(elapsed - elapsedServer, "nether portal lag");
+        }
+        timer.setLastPortalTime(-1);
+        timer.setLastPortalTimeServer(-1);
 
         // For Timelines
         if (targetWorld.getDimensionRegistryKey() == DimensionType.THE_NETHER_REGISTRY_KEY) {
@@ -138,6 +151,7 @@ public abstract class MinecraftClientMixin {
         RunCategories.checkAllBossesCompleted();
     }
 
+    @Unique
     private int saveTickCount = 0;
     @Inject(method = "tick", at = @At("RETURN"))
     private void onTickMixin(CallbackInfo ci) {
@@ -150,13 +164,17 @@ public abstract class MinecraftClientMixin {
     @Inject(method = "render(Z)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Util;getMeasuringTimeNano()J", shift = At.Shift.AFTER))
     private void renderMixin(boolean tick, CallbackInfo ci) {
         InGameTimer timer = InGameTimer.getInstance();
+        if (this.player != null) {
+            InGameTimerClientUtils.checkItemCriteria(this.player, true);
+        }
+
 
         if (timer.getStatus() == TimerStatus.RUNNING && this.paused) {
             timer.setPause(true, TimerStatus.PAUSED, "player");
             if (InGameTimerClientUtils.getGeneratedChunkRatio() < 0.1f) {
                 InGameTimerUtils.RETIME_IS_WAITING_LOAD = true;
             }
-        } else if (timer.getStatus() == TimerStatus.PAUSED && !this.paused) {
+        } else if (timer.getStatus() == TimerStatus.PAUSED && !this.paused && !(this.currentScreen instanceof StatsScreen)) {
             timer.setPause(false, "player");
         }
     }

@@ -376,6 +376,20 @@ public class TimerDrawer {
             }
         }
 
+        if (SpeedRunIGT.IS_DEBUG_MODE) {
+            client.textRenderer.draw(matrixStack, "Type 1: " + InGameTimer.getInstance().type1, 5, 5, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Type 3: " + InGameTimer.getInstance().type3, 5, 15, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Type 4: " + InGameTimer.getInstance().type4, 5, 25, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Server stats: " + InGameTimer.getInstance().serverStats, 5, 35, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Client stats: " + InGameTimer.getInstance().clientStats, 5, 45, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Client ticks: " + InGameTimer.getInstance().activateTicks, 5, 55, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Server ticks: " + InGameTimerClientUtils.getPlayerTicks(), 5, 65, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Portal: " + InGameTimer.getInstance().getLastPortalTime(), 5, 75, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Server portal: " + InGameTimer.getInstance().getLastPortalTimeServer(), 5, 85, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Interpolated: " + (System.currentTimeMillis() - InGameTimer.getInstance().leastTickTime), 5, 95, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Counted server: " + InGameTimer.getInstance().addedMisc, 5, 105, 0xFFFFFF);
+        }
+
         //렌더
         if (this.igtScale != 0) igtTimerElement.draw(matrixStack, this.translateZ);
         if (this.rtaScale != 0) rtaTimerElement.draw(matrixStack, this.translateZ);

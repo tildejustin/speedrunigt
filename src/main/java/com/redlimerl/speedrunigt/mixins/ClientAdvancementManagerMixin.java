@@ -73,7 +73,7 @@ public abstract class ClientAdvancementManagerMixin {
                         timer.updateCondition((AdvancementCategoryCondition) condition, advancement);
                     }
                 }
-                timer.checkConditions();
+                timer.checkConditions(false);
             }
 
             // How Did We Get Here

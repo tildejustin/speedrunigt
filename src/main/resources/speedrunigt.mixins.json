@@ -2,7 +2,10 @@
   "required": true,
   "package": "com.redlimerl.speedrunigt.mixins",
   "mixins": [
+    "DyeItemMixin",
+    "EnderDragonEntityMixin",
     "EndPortalBlockMixin",
+    "ItemEntityMixin",
     "LivingEntityMixin",
     "PlayerAdvancementTrackerMixin",
     "SeedCommandMixin",
@@ -15,6 +18,7 @@
     "coop.TimeCommandMixin",
     "network.CustomPayloadC2SPacketAccessor",
     "network.ServerPlayNetworkHandlerMixin",
+    "server.MinecraftServerMixin",
     "timeline.ServerPlayerEntityMixin"
   ],
   "client": [
@@ -41,6 +45,7 @@
     "screen.DownloadingTerrainScreenMixin",
     "screen.GameMenuScreenMixin",
     "screen.GeneratorOptionsMixin",
+    "screen.HandledScreenMixin",
     "screen.OptionsScreenMixin",
     "server.IntegratedServerMixin",
     "timeline.SoundSystemMixin",

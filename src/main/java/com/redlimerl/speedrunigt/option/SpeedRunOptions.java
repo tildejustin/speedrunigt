@@ -174,6 +174,18 @@ public class SpeedRunOptions {
         }
     };
 
+    public static final OptionArgument<Boolean> SMOOTH = new OptionArgument<Boolean>(new Identifier(SpeedRunIGT.MOD_ID, "smooth"), false) {
+        @Override
+        public Boolean valueFromString(String string) {
+            return Objects.equals(string, "true");
+        }
+
+        @Override
+        public String valueToString(Boolean value) {
+            return value.toString();
+        }
+    };
+
     public static final OptionArgument<Boolean> TIMER_LEGACY_IGT_MODE = new OptionArgument<Boolean>(new Identifier(SpeedRunIGT.MOD_ID, "legacy_igt_mod"), false) {
         @Override
         public Boolean valueFromString(String string) {

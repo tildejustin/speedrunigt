@@ -21,6 +21,9 @@ public class CategoryRegistryImpl implements SpeedRunIGTApi {
         list.add(MINE_A_CHUNK);list.add(MINE_A_CHUNK_SF);
         list.add(HIGH);
         list.add(ALL_SWORDS);list.add(ALL_MINERALS);list.add(FULL_IA_15_LVL);list.add(ALL_WORKSTATIONS);list.add(FULL_INV);list.add(STACK_OF_LIME_WOOL);
+        list.add(OBTAIN_DIAMOND);list.add(OBTAIN_EMERALD);list.add(OBTAIN_CAKE);list.add(OBTAIN_GOLDEN_APPLE);list.add(OBTAIN_NETHERITE);
+        list.add(ALL_LOGS);list.add(ALL_WOOL);list.add(SONIC_TAILS_KNUCKLES);
+        list.add(OBTAIN_OBSIDIAN);
         return list;
     }
 }

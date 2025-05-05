@@ -213,6 +213,18 @@ public class OptionButtonsImpl implements SpeedRunIGTApi {
 
         factories.add(screen -> new OptionButtonFactory.Builder()
                 .setButtonWidget(
+                        new ButtonWidget(0, 0, 150, 20, new TranslatableText("speedrunigt.option.smooth").append(" : ").append(SpeedRunOption.getOption(SpeedRunOptions.SMOOTH) ? ScreenTexts.ON : ScreenTexts.OFF),
+                                (ButtonWidget button) -> {
+                                    SpeedRunOption.setOption(SpeedRunOptions.SMOOTH, !SpeedRunOption.getOption(SpeedRunOptions.SMOOTH));
+                                    button.setMessage(new TranslatableText("speedrunigt.option.smooth").append(" : ").append(SpeedRunOption.getOption(SpeedRunOptions.SMOOTH) ? ScreenTexts.ON : ScreenTexts.OFF));
+                                })
+                )
+                .setToolTip(() -> I18n.translate("speedrunigt.option.smooth.description"))
+                .setCategory("speedrunigt.option.category.timing")
+        );
+
+        factories.add(screen -> new OptionButtonFactory.Builder()
+                .setButtonWidget(
                         new ButtonWidget(0, 0, 150, 20, new TranslatableText("speedrunigt.option.current_extensions"),
                                 (ButtonWidget button) -> {})
                 )

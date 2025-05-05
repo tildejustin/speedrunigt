@@ -3,6 +3,7 @@ package com.redlimerl.speedrunigt.mixins;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.redlimerl.speedrunigt.timer.InGameTimer;
+import com.redlimerl.speedrunigt.timer.InGameTimerClientUtils;
 import com.redlimerl.speedrunigt.timer.InGameTimerUtils;
 import com.redlimerl.speedrunigt.timer.TimerStatus;
 import com.redlimerl.speedrunigt.timer.category.RunCategories;
@@ -10,6 +11,7 @@ import com.redlimerl.speedrunigt.timer.category.condition.CategoryCondition;
 import com.redlimerl.speedrunigt.timer.category.condition.ObtainItemCategoryCondition;
 import net.minecraft.block.ShulkerBoxBlock;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.StatsScreen;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -39,180 +41,38 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
         super(world, profile);
     }
 
-    @Inject(method = "move(Lnet/minecraft/entity/MovementType;Lnet/minecraft/util/math/Vec3d;)V",
-            at = @At("TAIL"))
+    @Inject(method = "move(Lnet/minecraft/entity/MovementType;Lnet/minecraft/util/math/Vec3d;)V", at = @At("TAIL"))
     private void onMove(MovementType movementType, Vec3d vec3d, CallbackInfo ci) {
+        // TODO: run inventory checks at the end of the tick, after items have been picked up. also, abstract so they can be checked every inv render as well
         InGameTimer timer = InGameTimer.getInstance();
 
         if (timer.getStatus() == TimerStatus.NONE || timer.getStatus() == TimerStatus.COMPLETED_LEGACY) return;
 
-        if (timer.getStatus() == TimerStatus.IDLE && !InGameTimerUtils.IS_CHANGING_DIMENSION && (vec3d.x != 0 || vec3d.z != 0 || this.jumping || this.isSneaking())) {
+        if (timer.getStatus() == TimerStatus.IDLE && (vec3d.x != 0 || vec3d.z != 0 || this.jumping || this.isSneaking())) {
             timer.setPause(false, "moved player");
-        }
-        if (vec3d.x != 0 || vec3d.z != 0 || this.jumping) {
             timer.updateFirstInput();
         }
-
-        List<ItemStack> playerItemList = Lists.newArrayList();
-        playerItemList.addAll(this.inventory.armor);
-        playerItemList.addAll(this.inventory.offHand);
-        playerItemList.addAll(this.inventory.main);
-
-        // Custom Json category
-        if (timer.getCategory().getConditionJson() != null) {
-            for (CategoryCondition.Conditions conditions : timer.getCustomCondition().map(CategoryCondition::getConditions).orElse(Lists.newArrayList())) {
-                int strict = 0;
-                for (CategoryCondition.Condition<?> condition : conditions.getConditions()) {
-                    if (condition instanceof ObtainItemCategoryCondition) {
-                        ObtainItemCategoryCondition obtainItemCondition = (ObtainItemCategoryCondition) condition;
-                        boolean canComplete = obtainItemCondition.checkConditionComplete(playerItemList);
-                        if (obtainItemCondition.isStrictMode()) {
-                            if (!canComplete) strict++;
-                        } else {
-                            timer.updateCondition(obtainItemCondition, playerItemList);
-                        }
-                    }
-                }
-
-                if (strict == 0) {
-                    for (CategoryCondition.Condition<?> condition : conditions.getConditions()) {
-                        if (condition instanceof ObtainItemCategoryCondition) {
-                            ObtainItemCategoryCondition obtainItemCondition = (ObtainItemCategoryCondition) condition;
-                            timer.updateCondition(obtainItemCondition, playerItemList);
-                        }
-                    }
-                }
-
-            }
-            timer.checkConditions();
-        }
-
-        //HIGH%
-        if (timer.getCategory() == RunCategories.HIGH && this.getY() >= 420) {
-            InGameTimer.complete();
-            return;
-        }
-
-        //Full Inventory
-        if (timer.getCategory() == RunCategories.FULL_INV) {
-            if (this.inventory.main.stream().filter(itemStack -> itemStack != null && itemStack != ItemStack.EMPTY && itemStack.getItem() != Items.AIR).map(ItemStack::getItem).distinct().toArray().length == 36)
-                InGameTimer.complete();
-            return;
-        }
-
-        for (ItemStack itemStack : playerItemList) {
-            int shells = 0;
-
-            if (itemStack == null) continue;
-
-            // Timelines
-            if (itemStack.getItem() == Items.TRIDENT) {
-                timer.tryInsertNewTimeline("got_trident");
-            }
-            if (itemStack.getItem() == Items.NAUTILUS_SHELL) {
-                shells += itemStack.getCount();
-            }
-            if (itemStack.getItem() instanceof BlockItem && ((BlockItem) itemStack.getItem()).getBlock() instanceof ShulkerBoxBlock) {
-                shells += InGameTimerUtils.getItemCountFromShulkerBox(itemStack, Items.NAUTILUS_SHELL);
-            }
-            if (shells > timer.getMoreData(1541)) {
-                int i = 1;
-                while (shells >= timer.getMoreData(1541) + i) {
-                    timer.tryInsertNewTimeline("got_shell_" + (timer.getMoreData(1541) + i++));
-                }
-                timer.updateMoreData(1541, shells);
-            }
-
-
-
-            //Stack of Lime Wool
-            if (timer.getCategory() == RunCategories.STACK_OF_LIME_WOOL) {
-                if (itemStack.getItem() == Items.LIME_WOOL && itemStack.getCount() == 64) InGameTimer.complete();
-            }
-        }
-
-        List<Item> items = Stream.concat(this.inventory.main.stream(), this.inventory.offHand.stream()).map(ItemStack::getItem).collect(Collectors.toList());
-        List<Item> armors = this.inventory.armor.stream().map(ItemStack::getItem).collect(Collectors.toList());
-
-        //All Workstations
-        if (timer.getCategory() == RunCategories.ALL_WORKSTATIONS) {
-            if (items.contains(Items.BLAST_FURNACE) &&
-                    items.contains(Items.SMOKER) &&
-                    items.contains(Items.CARTOGRAPHY_TABLE) &&
-                    items.contains(Items.BREWING_STAND) &&
-                    items.contains(Items.COMPOSTER) &&
-                    items.contains(Items.BARREL) &&
-                    items.contains(Items.FLETCHING_TABLE) &&
-                    items.contains(Items.CAULDRON) &&
-                    items.contains(Items.LECTERN) &&
-                    items.contains(Items.STONECUTTER) &&
-                    items.contains(Items.LOOM) &&
-                    items.contains(Items.SMITHING_TABLE) &&
-                    items.contains(Items.GRINDSTONE)) {
-                InGameTimer.complete();
-            }
-        }
-
-        //All Swords
-        if (timer.getCategory() == RunCategories.ALL_SWORDS) {
-            if (items.contains(Items.STONE_SWORD) &&
-                    items.contains(Items.DIAMOND_SWORD) &&
-                    items.contains(Items.GOLDEN_SWORD) &&
-                    items.contains(Items.IRON_SWORD) &&
-                    items.contains(Items.NETHERITE_SWORD) &&
-                    items.contains(Items.WOODEN_SWORD)) {
-                InGameTimer.complete();
-            }
-        }
-
-        //All Minerals
-        if (timer.getCategory() == RunCategories.ALL_MINERALS) {
-            if (items.contains(Items.COAL) &&
-                    items.contains(Items.IRON_INGOT) &&
-                    items.contains(Items.GOLD_INGOT) &&
-                    items.contains(Items.DIAMOND) &&
-                    items.contains(Items.REDSTONE) &&
-                    items.contains(Items.LAPIS_LAZULI) &&
-                    items.contains(Items.EMERALD) &&
-                    items.contains(Items.QUARTZ) &&
-                    items.contains(Items.NETHERITE_INGOT)) {
-                InGameTimer.complete();
-            }
-        }
-
-        //Iron Armors & lvl 15
-        if (timer.getCategory() == RunCategories.FULL_IA_15_LVL) {
-            if (armors.contains(Items.IRON_HELMET) &&
-                    armors.contains(Items.IRON_CHESTPLATE) &&
-                    armors.contains(Items.IRON_BOOTS) &&
-                    armors.contains(Items.IRON_LEGGINGS) && this.experienceLevel >= 15) {
-                InGameTimer.complete();
-            }
-        }
     }
 
-    /*
-    private Long latestPortalEnter = null;
-    private int portalTick = 0;
-    @Inject(at = @At("HEAD"), method = "tick")
+    @Inject(method = "tick", at = @At("HEAD"))
     public void updateNausea(CallbackInfo ci) {
+        // client inventory is updated when packets are handled, immediately before a client tick, however it should still be counted as part of that tick
+        InGameTimerClientUtils.checkItemCriteria(this, false);
+
+        InGameTimer timer = InGameTimer.getInstance();
         // Portal time update
         if (this.inNetherPortal) {
-            if (++this.portalTick >= 81 && !InGameTimerUtils.IS_CHANGING_DIMENSION) {
-                this.portalTick = 0;
-                if (InGameTimer.getInstance().getStatus() != TimerStatus.IDLE && this.client.isInSingleplayer()) {
-                    this.latestPortalEnter = System.currentTimeMillis();
-                }
+            if (timer.getLastPortalTime() == -1) {
+                timer.setLastPortalTime(timer.getTicks());
             }
-        } else {
-            if (this.latestPortalEnter != null) {
-                InGameTimer.getInstance().tryExcludeIGT(System.currentTimeMillis() - this.latestPortalEnter, "nether portal lag");
-                this.latestPortalEnter = null;
-            }
-            this.portalTick = 0;
+        }
+        // if the player leaves client side, the client side timer will only get reset if the player leaves server side
+        // the server side timer will only reset if the tick counter hits 0,
+        // so this handles properly lag if the player leaves the portal but doesn't fully reset countdown
+        else if (timer.getLastPortalTimeServer() < 0) {
+            timer.setLastPortalTime(-1);
         }
     }
-    */
 
     @Override
     public void changeLookDirection(double cursorDeltaX, double cursorDeltaY) {
@@ -220,7 +80,7 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
 
         if (cursorDeltaX != 0 || cursorDeltaY != 0) {
             InGameTimer timer = InGameTimer.getInstance();
-            if (timer.getStatus() == TimerStatus.IDLE && !InGameTimerUtils.IS_CHANGING_DIMENSION) {
+            if (timer.getStatus() == TimerStatus.IDLE) {
                 timer.setPause(false, "changed look direction");
             }
         }

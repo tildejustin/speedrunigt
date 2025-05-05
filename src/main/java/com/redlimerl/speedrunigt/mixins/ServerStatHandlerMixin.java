@@ -52,7 +52,7 @@ public abstract class ServerStatHandlerMixin extends StatHandler {
                     timer.updateCondition((StatCategoryCondition) condition, jsonObject);
                 }
             }
-            timer.checkConditions();
+            timer.checkConditions(false);
         }
 
         if (timer.getStatus() == TimerStatus.NONE || timer.getStatus() == TimerStatus.COMPLETED_LEGACY) return;

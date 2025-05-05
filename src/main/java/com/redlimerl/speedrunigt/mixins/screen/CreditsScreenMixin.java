@@ -25,7 +25,7 @@ public class CreditsScreenMixin {
 
             int anyToAATime = SpeedRunOption.getOption(SpeedRunOptions.CHANGE_ANY_TO_AA_OVER);
             if (anyToAATime > 0 && (timer.getCategory() == RunCategories.ANY || timer.getCategory() == RunCategories.ALL_ADVANCEMENTS)) {
-                if (timer.getInGameTime() < 1000L*60*anyToAATime) {
+                if (timer.getInGameTime(false) < 1000L*60*anyToAATime) {
                     timer.setCategory(RunCategories.ANY, true);
                 } else {
                     timer.setCategory(RunCategories.ALL_ADVANCEMENTS, true);
