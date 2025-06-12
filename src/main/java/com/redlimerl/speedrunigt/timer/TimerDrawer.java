@@ -326,7 +326,7 @@ public class TimerDrawer {
     }
 
     public void draw() {
-        if (!this.toggle) return;
+        if (!this.toggle || InGameTimer.getInstance().isInvisible()) return;
 
         String igtText = getIGTText();
         String rtaText = getRTAText();

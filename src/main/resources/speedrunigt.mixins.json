@@ -9,6 +9,7 @@
     "ServerStatHandlerMixin",
     "ServerWorldMixin",
     "access.ServerStatHandlerAccessor",
+    "command.CommandManagerMixin",
     "coop.PlayerManagerMixin",
     "coop.TimeCommandMixin",
     "network.CustomPayloadC2SPacketAccessor",
