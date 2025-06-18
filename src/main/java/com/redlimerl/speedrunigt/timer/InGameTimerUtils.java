@@ -16,6 +16,7 @@ import com.redlimerl.speedrunigt.timer.running.RunPortalPos;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.block.ShulkerBoxBlock;
+import net.minecraft.class_10961;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ContainerComponent;
 import net.minecraft.item.BlockItem;
@@ -193,9 +194,9 @@ public class InGameTimerUtils {
 
     public static void updateStatsJson(InGameTimer timer) {
         JsonObject jsonObject = new JsonObject();
-        MinecraftServer server = getServer();
-        if (timer.isServerIntegrated && server != null && server.getPlayerManager() != null) {
-            ArrayList<ServerPlayerEntity> serverPlayerEntities = Lists.newArrayList(server.getPlayerManager().getPlayerList());
+        class_10961 server = getServer().field_59589;
+        if (timer.isServerIntegrated && server != null && server.method_68990() != null) {
+            ArrayList<ServerPlayerEntity> serverPlayerEntities = Lists.newArrayList(server.method_68990().getPlayerList());
             for (ServerPlayerEntity serverPlayerEntity : serverPlayerEntities) {
                 jsonObject.add(serverPlayerEntity.getUuidAsString(), SpeedRunIGT.GSON.fromJson(((ServerStatHandlerAccessor) serverPlayerEntity.getStatHandler()).invokeAsString(), JsonObject.class));
             }
@@ -205,7 +206,7 @@ public class InGameTimerUtils {
 
     public static boolean isHardcoreWorld() {
         if (SpeedRunIGT.IS_CLIENT_SIDE) return InGameTimerClientUtils.isHardcoreWorld();
-        return SpeedRunIGT.DEDICATED_SERVER.isHardcore();
+        return SpeedRunIGT.DEDICATED_SERVER.isHardcore(getServer().field_59589);
     }
 
     public static String getMinecraftVersion() {
@@ -282,18 +283,19 @@ public class InGameTimerUtils {
     public static int getCurrentWorldDefaultGameMode() {
         MinecraftServer server = getServer();
         if (server == null) return GameMode.SURVIVAL.getIndex();
-        return server.getDefaultGameMode().getIndex();
+        // TODO: probably incorrect
+        return server.method_70562().method_68998().getIndex();
     }
 
     public static boolean isCurrentWorldCheatAvailable() {
         MinecraftServer server = getServer();
         if (server == null) return false;
-        return server.getPlayerManager().areCheatsAllowed();
+        return server.field_59589.method_68990().areCheatsAllowed();
     }
 
     public static Difficulty getCurrentDifficulty() {
         MinecraftServer server = getServer();
         if (server == null) { return Difficulty.EASY; }
-        return server.getSaveProperties().getDifficulty();
+        return server.field_59589.method_69002().getDifficulty();
     }
 }

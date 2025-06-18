@@ -299,7 +299,7 @@ public class InGameTimer implements Serializable {
         });
 
         if (SpeedRunOption.getOption(SpeedRunOptions.AUTO_SAVE_PLAYER_DATA) && InGameTimerUtils.getServer() != null && !anyPercentSplit) {
-            InGameTimerUtils.getServer().getPlayerManager().saveAllPlayerData();
+            InGameTimerUtils.getServer().field_59589.method_68990().saveAllPlayerData();
         }
     }
 
@@ -750,7 +750,7 @@ public class InGameTimer implements Serializable {
                     if (SpeedRunIGT.IS_CLIENT_SIDE) {
                         TimerPacketUtils.sendClient2ServerPacket(MinecraftClient.getInstance(), new TimerStartPacket(InGameTimer.getInstance(), 0));
                     } else {
-                        TimerPacketUtils.sendServer2ClientPacket(SpeedRunIGT.DEDICATED_SERVER, new TimerStartPacket(InGameTimer.getInstance(), 0));
+                        TimerPacketUtils.sendServer2ClientPacket(SpeedRunIGT.DEDICATED_SERVER.field_59589, new TimerStartPacket(InGameTimer.getInstance(), 0));
                     }
                 }
             }

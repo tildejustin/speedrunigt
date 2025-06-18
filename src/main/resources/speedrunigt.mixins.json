@@ -4,12 +4,10 @@
   "plugin": "com.redlimerl.speedrunigt.SpeedRunIGTMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "EndPortalBlockMixin",
     "LivingEntityMixin",
     "PlayerAdvancementTrackerMixin",
     "SeedCommandMixin",
     "ServerStatHandlerMixin",
-    "ServerWorldMixin",
     "access.GameMenuScreenAccessor",
     "access.ServerStatHandlerAccessor",
     "coop.PlayerManagerMixin",

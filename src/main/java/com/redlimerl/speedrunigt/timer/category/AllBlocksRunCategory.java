@@ -30,7 +30,7 @@ public class AllBlocksRunCategory extends RunCategory {
         Set<String> placedBlocks = Sets.newHashSet();
 
         for (Item item : getAllItems()) {
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            for (ServerPlayerEntity player : server.field_59589.method_68990().getPlayerList()) {
                 if (player.getStatHandler().getStat(Stats.USED, item) > 0) {
                     placedBlocks.add(Registries.ITEM.getId(item).toString());
                     break;

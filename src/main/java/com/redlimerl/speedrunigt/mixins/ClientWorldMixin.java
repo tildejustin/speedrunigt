@@ -104,7 +104,7 @@ public abstract class ClientWorldMixin extends World {
 
     @Unique
     private int getBedrockMaxHeight() {
-        if (this.client.isIntegratedServerRunning() && this.client.getServer().getWorld((this.getRegistryKey())).getChunkManager().getChunkGenerator() instanceof FlatChunkGenerator) {
+        if (this.client.isIntegratedServerRunning() && this.client.getServer().field_59589.method_68963((this.getRegistryKey())).getChunkManager().getChunkGenerator() instanceof FlatChunkGenerator) {
             return this.getBottomY() + 1;
         }
         return this.getBottomY() + 5;

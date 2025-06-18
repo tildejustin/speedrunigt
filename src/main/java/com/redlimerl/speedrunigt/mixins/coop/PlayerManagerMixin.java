@@ -5,6 +5,7 @@ import com.redlimerl.speedrunigt.timer.InGameTimer;
 import com.redlimerl.speedrunigt.timer.packet.TimerPacketUtils;
 import com.redlimerl.speedrunigt.timer.packet.packets.TimerInitializePacket;
 import com.redlimerl.speedrunigt.timer.packet.packets.TimerStartPacket;
+import net.minecraft.class_10961;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -22,7 +23,7 @@ public abstract class PlayerManagerMixin {
 
     @Shadow public abstract int getCurrentPlayerCount();
 
-    @Shadow @Final private MinecraftServer server;
+    @Shadow @Final private class_10961 field_58338;
 
     @Inject(method = "onPlayerConnect", at = @At("TAIL"))
     public void onPlayerConnectInject(ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData, CallbackInfo ci) {
@@ -35,9 +36,9 @@ public abstract class PlayerManagerMixin {
             if (this.getCurrentPlayerCount() > (SpeedRunIGT.IS_CLIENT_SIDE ? 1 : 0) && !InGameTimer.getInstance().isCompleted()) {
                 if (InGameTimer.getInstance().isStarted() || !SpeedRunIGT.IS_CLIENT_SIDE) {
                     long rta = InGameTimer.getInstance().getRealTimeAttack();
-                    TimerPacketUtils.sendServer2ClientPacket(this.server, new TimerStartPacket(InGameTimer.getInstance(), rta));
+                    TimerPacketUtils.sendServer2ClientPacket(this.field_58338, new TimerStartPacket(InGameTimer.getInstance(), rta));
                 } else {
-                    TimerPacketUtils.sendServer2ClientPacket(this.server, new TimerInitializePacket(InGameTimer.getInstance()));
+                    TimerPacketUtils.sendServer2ClientPacket(this.field_58338, new TimerInitializePacket(InGameTimer.getInstance()));
                 }
             }
         }).start();

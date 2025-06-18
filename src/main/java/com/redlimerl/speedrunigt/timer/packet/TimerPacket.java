@@ -34,7 +34,7 @@ public abstract class TimerPacket<T extends CustomPayload> implements CustomPayl
     }
 
     protected void sendPacketToPlayers(MinecraftServer server) {
-        TimerPacketUtils.sendServer2ClientPacket(server, this);
+        TimerPacketUtils.sendServer2ClientPacket(server.field_59589, this);
     }
 
     protected abstract void write(RegistryByteBuf buf);

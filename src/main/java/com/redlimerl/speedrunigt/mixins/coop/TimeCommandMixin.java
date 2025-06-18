@@ -17,8 +17,8 @@ public class TimeCommandMixin {
     @Inject(method = "executeSet", at = @At("RETURN"))
     private static void onSet(ServerCommandSource source, int time, CallbackInfoReturnable<Integer> cir) {
         if (time == 0 && InGameTimer.getInstance().getStatus() != TimerStatus.NONE && InGameTimer.getInstance().isCoop()
-        && source.getServer() != null) {
-            TimerPacketUtils.sendServer2ClientPacket(source.getServer(), new TimerStartPacket(InGameTimer.getInstance(), 0));
+        && source.method_69818() != null) {
+            TimerPacketUtils.sendServer2ClientPacket(source.method_69818(), new TimerStartPacket(InGameTimer.getInstance(), 0));
         }
     }
 }

@@ -4,6 +4,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.class_10961;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -21,8 +22,8 @@ public class TimerPacketUtils {
         for (ServerPlayerEntity player : players) sendServer2ClientPacket(player, packet);
     }
 
-    public static void sendServer2ClientPacket(MinecraftServer server, TimerPacket<?> packet) {
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) sendServer2ClientPacket(player, packet);
+    public static void sendServer2ClientPacket(class_10961 server, TimerPacket<?> packet) {
+        for (ServerPlayerEntity player : server.method_68990().getPlayerList()) sendServer2ClientPacket(player, packet);
     }
 
     public static void sendServer2ClientPacket(ServerPlayerEntity player, TimerPacket<?> packet) {
