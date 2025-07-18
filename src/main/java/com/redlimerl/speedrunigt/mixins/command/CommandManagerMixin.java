@@ -16,7 +16,7 @@ public class CommandManagerMixin {
 
     @Shadow @Final private CommandDispatcher<ServerCommandSource> dispatcher;
 
-    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/brigadier/CommandDispatcher;findAmbiguities(Lcom/mojang/brigadier/AmbiguityConsumer;)V"))
+    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/brigadier/CommandDispatcher;findAmbiguities(Lcom/mojang/brigadier/AmbiguityConsumer;)V", remap = false))
     private void onInitCommands(boolean isDedicatedServer, CallbackInfo ci) {
         TimerCommand.register(this.dispatcher);
     }
