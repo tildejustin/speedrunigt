@@ -388,6 +388,7 @@ public class TimerDrawer {
             client.textRenderer.draw(matrixStack, "Server portal: " + InGameTimer.getInstance().getLastPortalTimeServer(), 5, 85, 0xFFFFFF);
             client.textRenderer.draw(matrixStack, "Interpolated: " + (System.currentTimeMillis() - InGameTimer.getInstance().leastTickTime), 5, 95, 0xFFFFFF);
             client.textRenderer.draw(matrixStack, "Counted server: " + InGameTimer.getInstance().addedMisc, 5, 105, 0xFFFFFF);
+            client.textRenderer.draw(matrixStack, "Dim load: " + (InGameTimerUtils.RETIME_IS_WAITING_LOAD && InGameTimerUtils.IS_CAN_WAIT_WORLD_LOAD),  5, 115, 0xFFFFF);
         }
 
         //렌더

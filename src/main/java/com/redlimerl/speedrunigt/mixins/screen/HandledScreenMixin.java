@@ -21,6 +21,6 @@ public abstract class HandledScreenMixin {
     private void checkObtainItemCriteria(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // inputs are handled during fps limit or in swapBuffers in render,
         // but a frame retime would end once it's visibly in inventory, which is also not tick-based
-//        InGameTimerClientUtils.checkItemCriteria(this.playerInventory.player, true);
+        InGameTimerClientUtils.checkItemCriteria(this.playerInventory.player, true);
     }
 }

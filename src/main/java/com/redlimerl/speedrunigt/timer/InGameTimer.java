@@ -97,6 +97,8 @@ public class InGameTimer implements Serializable {
     private long retimedIGTTime = 0;
     // segmenting
     private long excludedRTA = 0;
+    // lrt
+    private long includedRTA = 0;
     // nether portal lag
     private long excludedIGT = 0;
     // last client tick
@@ -627,10 +629,16 @@ public class InGameTimer implements Serializable {
 
         long ms = System.currentTimeMillis();
         boolean intepolate = smooth && this.isPlaying() && this.leastTickTime != 0;
+        long addedRealTime = this.includedRTA;
+        if (getStatus() == TimerStatus.PAUSED) {
+            if (InGameTimerUtils.RETIME_IS_WAITING_LOAD && InGameTimerUtils.IS_CAN_WAIT_WORLD_LOAD) addedRealTime += Math.max(getRealTimeAttack() - this.loggerPausedTime - 30 * 1000, 0);
+            else addedRealTime += getRealTimeAttack() - this.loggerPausedTime;
+        }
         return !this.isStarted() ? 0 :
                 ((this.getTicks() + (intepolate ? -1 : 0)) * 50L) // Tick Based
                         + Math.min(50, intepolate ? ms - this.leastTickTime : 0) // More smooth timer in playing
-                        + this.endIGTTime;
+                        + this.endIGTTime
+                        + addedRealTime;
     }
 
     public long getRetimedInGameTime() {
@@ -745,13 +753,14 @@ public class InGameTimer implements Serializable {
         SpeedRunIGT.debug("Paused: "+toPause+" (" + toStatus.name() + ") / Reason : " + reason);
 
         if (toPause) {
+            if (this.getStatus().getPause() != toStatus.getPause() && this.isStarted()) {
+                this.loggerPausedTime = this.getRealTimeAttack();
+                this.prevPauseReason = reason;
+                this.pauseCount++;
+                this.setStatus(toStatus);
+            }
             if (this.getStatus().getPause() <= toStatus.getPause()) {
                 GameInstance.getInstance().ensureWorld();
-                if (this.getStatus().getPause() < 1 && this.isStarted()) {
-                    this.loggerPausedTime = this.getRealTimeAttack();
-                    this.prevPauseReason = reason;
-                    this.pauseCount++;
-                }
                 InGameTimerUtils.CHANGED_OPTIONS.clear();
                 InGameTimerUtils.RETIME_IS_WAITING_LOAD = false;
                 if (this.pauseTriggerTick == this.loggerTicks && this.isStarted()) this.tick();
@@ -764,7 +773,7 @@ public class InGameTimer implements Serializable {
                     if (SpeedRunOption.getOption(SpeedRunOptions.TIMER_DATA_AUTO_SAVE) == SpeedRunOptions.TimerSaveInterval.PAUSE && this.status != TimerStatus.LEAVE) save();
                     // writes the global file on leaving the world.
                     // otherwise with seedqueue, the global record is only updated upon joining the next world.
-                    this.writeRecordFile(toStatus != com.redlimerl.speedrunigt.timer.TimerStatus.LEAVE);
+                    this.writeRecordFile(toStatus != TimerStatus.LEAVE);
                 }
             }
         } else {
@@ -789,6 +798,11 @@ public class InGameTimer implements Serializable {
                 }
                 if (this.isPaused()) {
                     this.leastPauseTime = nowTime - this.loggerPausedTime;
+                    // exclude dim change (Status.IDLE)
+                    if (this.getStatus() == TimerStatus.PAUSED) {
+                        if (InGameTimerUtils.RETIME_IS_WAITING_LOAD && InGameTimerUtils.IS_CAN_WAIT_WORLD_LOAD) this.includedRTA += Math.max(this.leastPauseTime - 30 * 1000, 0);
+                        else this.includedRTA += this.leastPauseTime;
+                    }
                     this.totalPauseTime += this.leastPauseTime;
                     this.pauseLogList.add(new TimerPauseLog(this.prevPauseReason, reason, this.getInGameTime(false), this.getRealTimeAttack(), this.leastPauseTime, this.pauseCount, retime));
                     if (this.pauseLogList.size() >= 100) {

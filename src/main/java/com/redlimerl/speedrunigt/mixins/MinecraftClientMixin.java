@@ -164,9 +164,6 @@ public abstract class MinecraftClientMixin {
     @Inject(method = "render(Z)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Util;getMeasuringTimeNano()J", shift = At.Shift.AFTER))
     private void renderMixin(boolean tick, CallbackInfo ci) {
         InGameTimer timer = InGameTimer.getInstance();
-        if (this.player != null) {
-            InGameTimerClientUtils.checkItemCriteria(this.player, true);
-        }
 
 
         if (timer.getStatus() == TimerStatus.RUNNING && this.paused) {

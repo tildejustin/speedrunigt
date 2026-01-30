@@ -3,6 +3,7 @@ package com.redlimerl.speedrunigt.mixins.network;
 import com.redlimerl.speedrunigt.SpeedRunIGT;
 import com.redlimerl.speedrunigt.option.SpeedRunOption;
 import com.redlimerl.speedrunigt.option.SpeedRunOptions;
+import com.redlimerl.speedrunigt.timer.InGameTimer;
 import com.redlimerl.speedrunigt.timer.packet.TimerPacket;
 import com.redlimerl.speedrunigt.timer.packet.TimerPacketBuf;
 import net.minecraft.client.MinecraftClient;
@@ -39,5 +40,11 @@ public class ClientPlayNetworkHandlerMixin {
                 ci.cancel();
             }
         }
+    }
+
+    @Inject(method = "onPlayerPositionLook", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;openScreen(Lnet/minecraft/client/gui/screen/Screen;)V"))
+    private void lowerPauseType(CallbackInfo ci) {
+        InGameTimer timer = InGameTimer.getInstance();
+        if (timer.isPaused()) timer.setPause(true, "terrain screen over");
     }
 }
